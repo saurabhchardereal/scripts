@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Function to upload to del.dog
+#
+# This can be downloaded and sourced without any of the other scripts in this repo.
+#
+# $ curl -LSsO https://github.com/nathanchance/scripts/raw/main/env/stubs/deldog
+#
+# Open the deldog file to make sure it matches this one.
+#
+# $ source deldog
+#
+# Usage:
+# $ deldog <file>
+# $ command |& deldog
+function deldog() { (
+    for BINARY in curl jq; do
+        command -v ${BINARY} &>/dev/null || {
+            echo "ERROR: ${BINARY} is not installed" >&2
+            exit 1
+        }
+    done
+    [[ -z ${HASTE_URL} ]] && HASTE_URL=https://del.dog
+    [[ -n ${DEL_DOG_API_KEY} && ${HASTE_URL} =~ del ]] && CURL_ARGS=(--header "X-api-key: ${DEL_DOG_API_KEY}")
+    RESULT=$(curl -sf --data-binary @"${1:--}" "${CURL_ARGS[@]}" "${HASTE_URL}"/documents) || {
+        echo "ERROR: failed to post document, ca-certificates might need to be installed" >&2
+        exit 1
+    }
+    echo "${HASTE_URL}/raw/$(jq -r .key <<<"${RESULT}")"
+); }
+# vi: filetype=zsh
