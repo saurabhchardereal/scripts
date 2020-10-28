@@ -19,9 +19,9 @@ export ZSH="$(antibody path ohmyzsh/ohmyzsh)"
 source <(antibody init)
 
 PLUGINS=(
-	"ohmyzsh/ohmyzsh path:plugins/colored-man-pages"
-	zsh-users/zsh-syntax-highlighting 
-	romkatv/powerlevel10k
+    "ohmyzsh/ohmyzsh path:plugins/colored-man-pages"
+    zsh-users/zsh-syntax-highlighting
+    romkatv/powerlevel10k
 )
 
 for PLUGIN in "${PLUGINS[@]}"; do
@@ -34,6 +34,9 @@ source $ZSH/oh-my-zsh.sh
 
 # Aliases
 alias c='clear'
+
+# Write HISTFILE to ~/.zsh directory
+HISTFILE=${ZDOTDIR:-$HOME}/.zsh_history
 
 # Export GPG_TTY using $TTY (works even when stdin is redirected)
 export GPG_TTY=$TTY
