@@ -6,7 +6,7 @@
 #
 
 SCRIPT_PATH=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
-TERMUX_STYLE="$SCRIPT_PATH/../modules/termux-style"
+SCRIPT_DIR=$(dirname "${SCRIPT_PATH}")
 
 source "$SCRIPT_PATH"/git
 
@@ -18,12 +18,14 @@ pkg install --no-install-recommends -y \
     openssh \
     gnupg \
     binutils \
-    wget
+    wget \
+    zsh
 
 # Theme
 setupTheme() {
     # use Dracula color scheme & Hack font by default
     # can be changed after installing termux-style anyway
+    TERMUX_STYLE="$SCRIPT_DIR"/modules/termux-style
     cp "$TERMUX_STYLE"/colors/dracula.properties "$HOME"/.termux/colors.properties
     cp "$TERMUX_STYLE"/fonts/Hack.ttf "$HOME"/.termux/font.ttf
 }
@@ -34,37 +36,12 @@ echo "extra-keys = [['ESC','/','-','HOME','UP','END','PGUP'],['TAB','CTRL','ALT'
 [[ -d "$TERMUX_STYLE" ]] && setupTheme
 git_setup
 
-cat >>"$HOME"/.bashrc <<'EOF'
-# VIM FTW
-export EDITOR=vim
+# Setup dotfiles
+echo "export ZDOTDIR=~/.zsh" >"${HOME}"/.zshenv
+ln -sf "$SCRIPT_DIR"/dotfiles/.zsh "${HOME}"
+ln -sf "$SCRIPT_DIR"/dotfiles/.vim "${HOME}"
 
-# For gpg signature
-export GPG_TTY=$(tty)
+# Switch to zsh
+chsh -s zsh
 
-# Aliases
-alias l='ls'
-alias ll='ls -l'
-alias la='ls -a'
-alias c='clear'
-alias ..='cd ../'
-alias ...='cd ../../'
-
-# parse git branch to show in prompt style
-# kanged from https://github.com/krasCGQ/scripts
-parseGitBranch() {
-        local BRANCH
-        BRANCH=$(git branch 2>/dev/null | sed -e '/^[^*]/d' -e 's/^* //')
-
-        if [[ -n $BRANCH ]]; then
-            # Don't give extra brackets if project isn't at any branch or is currently detached
-            [[ $BRANCH != "("*")" ]] && BRANCH="($BRANCH)"
-
-            # This is what we want to stdout
-            echo " $BRANCH"
-        fi
-}
-
-
-# Override default prompt style
-export PS1='\[\e[1;36m\]\w\[\e[1;34m\]$(parseGitBranch) ❯\[\e[0m\] '
-EOF
+echo "Setup done!"
