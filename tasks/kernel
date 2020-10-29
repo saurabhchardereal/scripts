@@ -5,118 +5,135 @@
 # Copyright (C) 2020 Saurabh Charde <saurabhchardereal@gmail.com>
 #
 
-# Set clang version and android tag
-CLANG_VER="r399163"
-ANDROID_TAG="android-11.0.0_r3"
+# Source common helper
+SCRIPT_PATH=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
+source ${SCRIPT_PATH}/../common
+
+# Exit if not a kernel repository
+[[ ! -f Makefile ]] && prErr "Run from within kernel directory!" && exit 1
 
 # Set compiler paths
-COMPILER_PATH="$HOME/compiler"
-CLANG_PATH="$COMPILER_PATH/clang/clang-${CLANG_VER}/bin"
-GCC_PATH="$COMPILER_PATH/gcc/bin"
-GCC_32_PATH="$COMPILER_PATH/gcc32/bin"
+COMPILER_PATH=${HOME}/compiler
+AOSP_TC=${COMPILER_PATH}/aosp_tc
+PROTON_CLANG=${COMPILER_PATH}/proton_clang
 
 # Kernel specific
 DEFCONFIG="X00T_defconfig"
 ANYKERNEL=flasher
-ZIMAGE=out/arch/arm64/boot/Image.gz-dtb
-KERNEL_NAME="ARAGOTO"
-ZIP_NAME="${KERNEL_NAME}-$(date +"%d%m%Y")-$(date +%H:%M).zip"
 
 export KBUILD_BUILD_USER="SaurabhCharde"
 export KBUILD_BUILD_HOST="ProjectWeeb"
 
-# Colors
-RST='\033[0m'
-RED='\033[0;31m'
-LGR='\033[1;32m'
-YEL='\033[1;33m'
-BLU='\033[1;34m'
+# Common arguments
+MAKE_ARGS="-j$(nproc --all) O=out ARCH=arm64 "
 
-# Arguments
-ARGS="-j$(nproc --all) O=out ARCH=arm64 "
-
-# Prints a formatted header to point out what is being done to the user
-header() {
-    BORDER="====$(for _ in $(seq ${#1}); do printf '='; done)===="
-    printf '\n%b%s\n%s\n%s%b\n\n' "${2:-${LGR}}" "${BORDER}" "    ${1}    " "${BORDER}" "${RST}"
-}
-
-# Functions
+# Check for dependencies
 checkDeps() {
-    # Clone compilers if does not exist
-    [[ ! -d "$CLANG_PATH" ]] &&
-        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 -b master $COMPILER_PATH/clang
+    if [[ -n "$USE_AOSP_CLANG" ]]; then
+        [[ ! -d "$AOSP_TC/clang" ]] &&
+            git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 -b master $AOSP_TC/clang
 
-    [[ ! -d "$GCC_PATH" ]] &&
-        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 -b ${ANDROID_TAG} $COMPILER_PATH/gcc
+        [[ ! -d "$AOSP_TC/gcc" ]] &&
+            git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 -b ${ANDROID_TAG} $AOSP_TC/gcc
 
-    [[ ! -d "$GCC_32_PATH" ]] &&
-        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9 -b ${ANDROID_TAG} $COMPILER_PATH/gcc32
-
+        [[ ! -d "$AOSP_TC/gcc32" ]] &&
+            git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9 -b ${ANDROID_TAG} $AOSP_TC/gcc32
+    fi
     [[ ! -d "$ANYKERNEL" ]] &&
         git clone --depth=1 https://github.com/saurabhchardereal/AnyKernel3 -b ARAGOTO $ANYKERNEL
+
+    [[ ! -d "$PROTON_CLANG" ]] &&
+        git clone --depth=1 https://github.com/kdrag0n/proton-clang -b master $PROTON_CLANG
 }
 
-makeClean() {
-    START=$(date +"%s")
-    header "Making Clean..."
-    make $ARGS clean
-    make $ARGS mrproper
-    echo -e $BLU "Cleaned!" $RST
-}
-
-makeDefconfig() {
-    START=$(date +"%s")
-    header "Regenerating defconfig..."
-    make $ARGS $DEFCONFIG
-    mv out/.config arch/arm64/configs/X00T_defconfig
-    echo -e $BLU "Renerating defconfig done!" $RST
-}
-
-makeKernel() {
-    START=$(date +"%s")
-    header "Building kernel..."
-    checkDeps
-    ARGS+="CC=$CLANG_PATH/clang \
-    CLANG_TRIPLE=aarch64-linux-gnu- \
-    CROSS_COMPILE=$GCC_PATH/aarch64-linux-android- \
-    CROSS_COMPILE_ARM32=$GCC_32_PATH/arm-linux-androideabi- "
-    make $ARGS
-    echo -e $BLU "Kernel image build completed!" $RST
-}
-
-makeZip() {
-    # Fail build if previous command isn't a success
-    if [ $? -ne 0 ]; then
-        echo -e $RED "Build Failed!" $RST
+# Set make arguments based on which Clang we use
+makeArgs() {
+    if [[ -n "$USE_AOSP_CLANG" ]]; then
+        # specify clang version
+        CLANG_VER="r399163"
+        MAKE_ARGS+="CC=$AOSP_TC/clang/clang-${CLANG_VER}/bin/clang \
+        CLANG_TRIPLE=aarch64-linux-gnu- \
+        CROSS_COMPILE=$AOSP_TC/gcc/bin/aarch64-linux-android- \
+        CROSS_COMPILE_ARM32=$AOSP_TC/gcc32/bin/arm-linux-androideabi- "
     else
-        header "Making Flashable Zip..."
-        cp -f $ZIMAGE $ANYKERNEL
-        cd $ANYKERNEL
-        find . -name "*.zip" -type f -delete
-        zip -r $ZIP_NAME *
+        MAKE_ARGS+="CC=$PROTON_CLANG/bin/clang \
+        CROSS_COMPILE=aarch64-linux-gnu- \
+        CROSS_COMPILE_ARM32=arm-linux-gnueabi- "
     fi
 }
 
-# Add built parameters
-while ((${#})); do
-    case ${1} in
-    -r | --regendef)
-        makeDefconfig
-        ;;
+makeClean() {
+    header "Making Clean..."
+    make ${MAKE_ARGS} clean
+    make mrproper
+    prInfo "Cleaned!"
+}
 
-    -c | --clean)
-        makeClean
-        ;;
+makeDefconfig() {
+    header "Regenerating defconfig..."
+    make ${MAKE_ARGS} $DEFCONFIG
+    cp -f out/.config arch/arm64/configs/X00T_defconfig
+    prInfo "Renerating defconfig done!"
+}
 
-    -m | --make)
-        makeKernel
-        makeZip
-        ;;
-    esac
-    shift
-done
+makeKernel() {
+    header "Building kernel..."
+    checkDeps
+    makeArgs
+    if [[ -f out/.config ]]; then
+        make ${MAKE_ARGS} oldconfig
+    else
+        make ${MAKE_ARGS} $DEFCONFIG
+    fi
+    make ${MAKE_ARGS}
 
-# Print build time
+    # Make flashable zip if not BUILD_ONLY
+    if [[ -z ${BUILD_ONLY} ]]; then
+        ZIMAGE=$(find out/arch/arm64 -name Image.gz-dtb)
+        if [[ -n ${ZIMAGE} ]]; then
+            header "Making Flashable Zip..."
+            ZIP_NAME="ARAGOTO-$(date +"%d%m%Y")-$(date +%H:%M).zip"
+            cp -f ${ZIMAGE} $ANYKERNEL
+            cd $ANYKERNEL
+            find . -name "*.zip" -type f -delete
+            zip -r $ZIP_NAME *
+        else
+            prErr "No kernel image found!"
+        fi
+    else
+        prInfo "Kernel image build completed!"
+    fi
+}
+
+# Add build parameters
+parse_build_params() {
+    START=$(date +"%s")
+    while ((${#})); do
+        case "${1}" in
+        --aosp-clang)
+            USE_AOSP_CLANG=true
+            ;;
+
+        -r | --regendef)
+            makeDefconfig
+            ;;
+
+        -c | --clean)
+            makeClean
+            ;;
+
+        -m | --make)
+            makeKernel
+            ;;
+
+        -bo | --build-only)
+            BUILD_ONLY=true
+            ;;
+        esac
+        shift
+    done
+}
+
+parse_build_params "${@}"
 DURATION=$(($(date +"%s") - START))
-echo -e $YEL "Build completed in $((DURATION / 60)) mins and $((DURATION % 60)) secs" $RST
+prSucc "Build completed in $((DURATION / 60)) mins and $((DURATION % 60)) secs"
