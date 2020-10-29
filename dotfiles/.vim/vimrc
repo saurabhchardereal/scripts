@@ -17,6 +17,7 @@ set tabstop=4               " The width of a TAB is set to 4.
                             " Vim will interpret it to be having
                             " a width of 4.
 set softtabstop=4           " Sets the number of columns for a TAB
+set shell=bash              " Set default shell to bash coz zsh isn't POSIX-compatible
 
 " highlight trailing whitespace in red
 hi ExtraWhitespace ctermbg=darkred
@@ -34,5 +35,11 @@ endif
 " Source plugins.vim to load plugins
 so ~/.vim/plugins.vim
 
-" Write viminfo to ~/.vim/viminfo
+" Write {swap,viminfo,backup} to ~/.vim/{swap,viminfo,backup}
+" https://vi.stackexchange.com/a/20067
+if !isdirectory('~/.vim/swap')
+    silent call system('mkdir -p ~/.vim/{swap,backup}')
+    set backupdir=~/.vim/backup//
+    set directory=~/.vim/swap//
+endif
 set viminfo+=n~/.vim/viminfo

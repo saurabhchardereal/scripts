@@ -1,4 +1,6 @@
 autoload
 plugged
 viminfo
+swap
+backup
 .netrwhist
