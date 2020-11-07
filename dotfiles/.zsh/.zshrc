@@ -35,8 +35,9 @@ source $ZSH/oh-my-zsh.sh
 # Aliases
 alias c='clear'
 
-# Write HISTFILE to ~/.zsh directory
+# History
 HISTFILE=${ZDOTDIR:-$HOME}/.zsh_history
+setopt incappendhistory
 
 # Export GPG_TTY using $TTY (works even when stdin is redirected)
 export GPG_TTY=$TTY
