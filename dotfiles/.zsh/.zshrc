@@ -18,6 +18,10 @@ export ZSH="$(antibody path ohmyzsh/ohmyzsh)"
 # Initialize antibody and install plugins
 source <(antibody init)
 
+# Source oh-my-zsh (for keybindings, aliases and misc stuff)
+# TODO: Add everything manually and remove OMZ (overhead goes brrrr)
+source $ZSH/oh-my-zsh.sh
+
 PLUGINS=(
     "ohmyzsh/ohmyzsh path:plugins/colored-man-pages"
     zsh-users/zsh-syntax-highlighting
@@ -28,9 +32,6 @@ for PLUGIN in "${PLUGINS[@]}"; do
     antibody bundle "${PLUGIN}"
 done
 unset PLUGINS
-
-# Now that everything's set properly, source oh-my-zsh
-source $ZSH/oh-my-zsh.sh
 
 # Aliases
 alias c='clear'
