@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -10,30 +10,37 @@
 # (source: https://github.com/joshuous/AospMissingBlobs)
 
 SCRIPT_PATH=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
+JAR_PATH="${SCRIPT_PATH}"/../bin/MissingBlobs.jar
 
 if [ -z "$ANDROID_PRODUCT_OUT" ]; then
     echo "Run after lunching your device!"
-    return 1
+    exit 1
 fi
 
-cd "$ANDROID_PRODUCT_OUT"
-
 # Add paths to check for blobs
-BLOBS_PATH="
-    system/lib \
-    system/lib64 \
-    system/lib/vndk-29 \
-    system/lib/vndk-sp-29 \
-    system/lib64/vndk-29 \
-    system/lib64/vndk-sp-29 \
-    system/product/lib \
-    system/product/lib64 \
-    vendor/lib \
-    vendor/lib64 \
-    vendor/bin/hw \
-    system/bin/hw \
-    system/apex/*/* \
-    vendor/apex/*/* "
+BLOBS_PATH=(
+    system/lib
+    system/lib64
+    system/lib/vndk-29
+    system/lib/vndk-sp-29
+    system/lib64/vndk-29
+    system/lib64/vndk-sp-29
+    system/product/lib
+    system/product/lib64
+    vendor/lib
+    vendor/lib64
+    vendor/bin/hw
+    system/bin/hw
+    system/apex/*/*
+    vendor/apex/*/*
+)
 
-java -jar "$SCRIPT_PATH"/../bin/MissingBlobs.jar \
-    $BLOBS_PATH >missing_blobs.txt
+cd "${ANDROID_PRODUCT_OUT}"
+
+[[ ! -f "${JAR_PATH}" ]] && {
+    curl --create-dirs -LOs tmp https://github.com/saurabhchardereal/scripts/raw/master/bin/MissingBlobs.jar
+    JAR_PATH=tmp/MissingBlobs.jar
+    trap 'rm -rf ${ANDROID_PRODUCT_OUT}/tmp;' EXIT
+}
+
+java -jar "${JAR_PATH}" "${BLOBS_PATH[@]}" >missing_blobs.txt
