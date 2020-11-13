@@ -6,11 +6,11 @@
 #
 
 SCRIPT_PATH=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
-SCRIPT_DIR=$(dirname "${SCRIPT_PATH}")
-
+source "$SCRIPT_PATH"/../common
 source "$SCRIPT_PATH"/git
 
 # Packages to install
+prInfo "Installing packages ..."
 pkg install --no-install-recommends -y \
     antibody \
     nano \
@@ -24,17 +24,15 @@ pkg install --no-install-recommends -y \
 # Theme
 setupTheme() {
     # use Dracula color scheme & Hack font by default
-    # can be changed after installing termux-style anyway
-    TERMUX_STYLE="$SCRIPT_DIR"/modules/termux-style
-    cp "$TERMUX_STYLE"/colors/dracula.properties "$HOME"/.termux/colors.properties
-    cp "$TERMUX_STYLE"/fonts/Hack.ttf "$HOME"/.termux/font.ttf
+    prInfo "Setting up theme ..."
+    curl -Lso "$HOME"/.termux/colors.properties https://raw.githubusercontent.com/adi1090x/termux-style/master/colors/dracula.properties
+    curl -Lso "$HOME"/.termux/font.ttf https://github.com/adi1090x/termux-style/raw/master/fonts/Hack.ttf
 }
 
 # Settings I use for moi setup
 mkdir ~/.termux && touch ~/.termux/termux.properties
 echo "extra-keys = [['ESC','/','-','HOME','UP','END','PGUP'],['TAB','CTRL','ALT','LEFT','DOWN','RIGHT','PGDN']]" >~/.termux/termux.properties
-[[ -d "$TERMUX_STYLE" ]] && setupTheme
-git_setup
+setupTheme; git_setup
 
 # Setup dotfiles
 echo "export ZDOTDIR=~/.zsh" >"${HOME}"/.zshenv
@@ -44,4 +42,4 @@ ln -sf "$SCRIPT_DIR"/dotfiles/.vim "${HOME}"
 # Switch to zsh
 chsh -s zsh
 
-echo "Setup done!"
+prSucc "Setup done!"
