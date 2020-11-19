@@ -110,25 +110,25 @@ parse_build_params() {
     START=$(date +"%s")
     while ((${#})); do
         case "${1}" in
-        --aosp-clang)
-            USE_AOSP_CLANG=true
-            ;;
+            --aosp-clang)
+                USE_AOSP_CLANG=true
+                ;;
 
-        -r | --regendef)
-            makeDefconfig
-            ;;
+            -r | --regendef)
+                makeDefconfig
+                ;;
 
-        -c | --clean)
-            makeClean
-            ;;
+            -c | --clean)
+                makeClean
+                ;;
 
-        -m | --make)
-            makeKernel
-            ;;
+            -m | --make)
+                makeKernel
+                ;;
 
-        -bo | --build-only)
-            BUILD_ONLY=true
-            ;;
+            -bo | --build-only)
+                BUILD_ONLY=true
+                ;;
         esac
         shift
     done
