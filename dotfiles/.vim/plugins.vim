@@ -13,7 +13,8 @@ endif
 call plug#begin('~/.vim/plugged')
 
 Plug 'z0mbix/vim-shfmt'
-let g:shfmt_extra_args = '-i 4' " use 4 spaces as default indent style
+let g:shfmt_extra_args = '-ci -i 4' " `-ci`  - indent instances of switch cases
+                                    " `-i 4` - use 4 spaces as default indent style
 
 Plug 'tpope/vim-fugitive'
 
