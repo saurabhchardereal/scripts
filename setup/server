@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+#
+# SPDX-License-Identifier: GPL-3.0-or-later                   #
+#
+# Copyright (C) 2020 Saurabh Charde <saurabhchardereal@gmail.com>
+#
+# Server setup script
+
+SCRIPT_PATH=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
+source "$SCRIPT_PATH"/../common
+source "$SCRIPT_PATH"/git
+
+header "Updating & Installing build packages ..."
+sudo apt-get update
+
+# setup and install build packages from akhilnarang's script
+bash <(curl -sL https://raw.githubusercontent.com/akhilnarang/scripts/master/setup/android_build_env.sh)
+
+# install few extra packages that I use often
+sudo apt-get install -y megatools aria2c
+
+# `upgrade` to make sure we have everything running at latest
+sudo apt-get upgrade
+
+prInfo "Package install done!"
+
+header "Setting up dotfiles and rest ..."
+
+# Setup git
+git_setup
+
+# Setup configs
+ln -sf ${SCRIPT_DIR}/dotfiles/.vim ${HOME}
+ln -sf ${SCRIPT_DIR}/dotfiles/.zsh/.aliases ${HOME}/.bash_aliases
+
+prSucc "Server setup done!"
