@@ -11,6 +11,7 @@ source ${SCRIPT_PATH}/../common
 
 # Exit if not a kernel repository
 [[ ! -f Makefile ]] && prErr "Run from within kernel directory!" && exit 1
+KERN_DIR=${PWD}
 
 # Set compiler paths
 COMPILER_PATH=${HOME}/compiler
@@ -19,28 +20,29 @@ PROTON_CLANG=${COMPILER_PATH}/proton_clang
 
 # Kernel specific
 DEFCONFIG="X00T_defconfig"
-ANYKERNEL=flasher
 
 export KBUILD_BUILD_USER="SaurabhCharde"
 export KBUILD_BUILD_HOST="ProjectWeeb"
 
+# Add toolchains to $PATH
+PATH=${AOSP_TC}/gcc/bin:${AOSP_TC}/gcc32/bin:$PATH
+
 # Common arguments
-MAKE_ARGS="-j$(nproc --all) O=out ARCH=arm64 "
+MAKE_ARGS=(-j$(nproc --all) O=out ARCH=arm64)
 
 # Check for dependencies
-checkDeps() {
-    if [[ -n "$USE_AOSP_CLANG" ]]; then
-        [[ ! -d "$AOSP_TC/clang" ]] &&
-            git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 -b master $AOSP_TC/clang
+checkTC() {
+    [[ ! -d "$AOSP_TC/clang" ]] &&
+        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 -b master $AOSP_TC/clang
 
-        [[ ! -d "$AOSP_TC/gcc" ]] &&
-            git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 -b ${ANDROID_TAG} $AOSP_TC/gcc
+    [[ ! -d "$AOSP_TC/gcc" ]] &&
+        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 -b master $AOSP_TC/gcc
 
-        [[ ! -d "$AOSP_TC/gcc32" ]] &&
-            git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9 -b ${ANDROID_TAG} $AOSP_TC/gcc32
-    fi
-    [[ ! -d "$ANYKERNEL" ]] &&
-        git clone --depth=1 https://github.com/saurabhchardereal/AnyKernel3 -b ARAGOTO $ANYKERNEL
+    [[ ! -d "$AOSP_TC/gcc32" ]] &&
+        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9 -b master $AOSP_TC/gcc32
+
+    [[ ! -d "$KERN_DIR/flasher" ]] &&
+        git clone --depth=1 https://github.com/saurabhchardereal/AnyKernel3 -b ARAGOTO ${KERN_DIR}/flasher
 
     [[ ! -d "$PROTON_CLANG" ]] &&
         git clone --depth=1 https://github.com/kdrag0n/proton-clang -b master $PROTON_CLANG
@@ -50,42 +52,42 @@ checkDeps() {
 makeArgs() {
     if [[ -n "$USE_AOSP_CLANG" ]]; then
         # specify clang version
-        CLANG_VER="r399163"
-        MAKE_ARGS+="CC=$AOSP_TC/clang/clang-${CLANG_VER}/bin/clang \
-        CLANG_TRIPLE=aarch64-linux-gnu- \
-        CROSS_COMPILE=$AOSP_TC/gcc/bin/aarch64-linux-android- \
-        CROSS_COMPILE_ARM32=$AOSP_TC/gcc32/bin/arm-linux-androideabi- "
+        CLANG_VER="r399163b"
+        MAKE_ARGS+=(CC=$AOSP_TC/clang/clang-${CLANG_VER}/bin/clang
+            CLANG_TRIPLE=aarch64-linux-gnu-
+            CROSS_COMPILE=aarch64-linux-android-
+            CROSS_COMPILE_ARM32=arm-linux-androideabi-)
     else
-        MAKE_ARGS+="CC=$PROTON_CLANG/bin/clang \
-        CROSS_COMPILE=aarch64-linux-gnu- \
-        CROSS_COMPILE_ARM32=arm-linux-gnueabi- "
+        PATH=${PROTON_CLANG}/bin:$PATH
+        MAKE_ARGS+=(CC=${PROTON_CLANG}/bin/clang
+            CROSS_COMPILE=aarch64-linux-gnu-
+            CROSS_COMPILE_ARM32=arm-linux-gnueabi-)
     fi
 }
 
 makeClean() {
     header "Making Clean..."
-    make ${MAKE_ARGS} clean
+    make "${MAKE_ARGS[@]}" clean
     make mrproper
     prInfo "Cleaned!"
 }
 
 makeDefconfig() {
     header "Regenerating defconfig..."
-    make ${MAKE_ARGS} $DEFCONFIG
-    cp -f out/.config arch/arm64/configs/X00T_defconfig
+    make "${MAKE_ARGS[@]}" $DEFCONFIG
+    cp -f out/.config arch/arm64/configs/$DEFCONFIG
     prInfo "Renerating defconfig done!"
 }
 
 makeKernel() {
     header "Building kernel..."
-    checkDeps
-    makeArgs
+    checkTC; makeArgs
     if [[ -f out/.config ]]; then
-        make ${MAKE_ARGS} oldconfig
+        make "${MAKE_ARGS[@]}" oldconfig
     else
-        make ${MAKE_ARGS} $DEFCONFIG
+        make "${MAKE_ARGS[@]}" $DEFCONFIG
     fi
-    make ${MAKE_ARGS}
+    make "${MAKE_ARGS[@]}"
 
     # Make flashable zip if not BUILD_ONLY
     if [[ -z ${BUILD_ONLY} ]]; then
@@ -93,8 +95,8 @@ makeKernel() {
         if [[ -n ${ZIMAGE} ]]; then
             header "Making Flashable Zip..."
             ZIP_NAME="ARAGOTO-$(date +"%d%m%Y")-$(date +%H:%M).zip"
-            cp -f ${ZIMAGE} $ANYKERNEL
-            cd $ANYKERNEL
+            cp -f ${ZIMAGE} ${KERN_DIR}/flasher
+            cd ${KERN_DIR}/flasher
             find . -name "*.zip" -type f -delete
             zip -r $ZIP_NAME *
         else
@@ -114,6 +116,10 @@ parse_build_params() {
                 USE_AOSP_CLANG=true
                 ;;
 
+            -b | --build-only)
+                BUILD_ONLY=true
+                ;;
+
             -r | --regendef)
                 makeDefconfig
                 ;;
@@ -124,10 +130,6 @@ parse_build_params() {
 
             -m | --make)
                 makeKernel
-                ;;
-
-            -bo | --build-only)
-                BUILD_ONLY=true
                 ;;
         esac
         shift
