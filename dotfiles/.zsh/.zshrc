@@ -38,7 +38,8 @@ alias c='clear'
 
 # History
 HISTFILE=${ZDOTDIR:-$HOME}/.zsh_history
-setopt incappendhistory
+setopt sharehistory      # share history across terminals
+setopt incappendhistory  # immediately append to the history file, not just when a term is killed
 
 # Export GPG_TTY using $TTY (works even when stdin is redirected)
 export GPG_TTY=$TTY
