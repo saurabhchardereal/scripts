@@ -7,7 +7,7 @@
 
 # Source common helper
 SCRIPT_PATH=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
-source ${SCRIPT_PATH}/../common
+source "${SCRIPT_PATH}"/../common
 
 # Exit if not a kernel repository
 [[ ! -f Makefile ]] && prErr "Run from within kernel directory!" && exit 1
@@ -28,38 +28,40 @@ export KBUILD_BUILD_HOST="ProjectWeeb"
 PATH=${AOSP_TC}/gcc/bin:${AOSP_TC}/gcc32/bin:$PATH
 
 # Common arguments
-MAKE_ARGS=(-j$(nproc --all) O=out ARCH=arm64)
+# shellcheck disable=SC2191
+MAKE_ARGS=(-j"$(nproc --all)" O=out ARCH=arm64)
 
 # Check for dependencies
 checkTC() {
     [[ ! -d "$AOSP_TC/clang" ]] &&
-        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 -b master $AOSP_TC/clang
+        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 -b master "${AOSP_TC}"/clang
 
     [[ ! -d "$AOSP_TC/gcc" ]] &&
-        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 -b master $AOSP_TC/gcc
+        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9 -b master "${AOSP_TC}"/gcc
 
     [[ ! -d "$AOSP_TC/gcc32" ]] &&
-        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9 -b master $AOSP_TC/gcc32
+        git clone --depth=1 https://android.googlesource.com/platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9 -b master "${AOSP_TC}"/gcc32
 
     [[ ! -d "$KERN_DIR/flasher" ]] &&
-        git clone --depth=1 https://github.com/saurabhchardereal/AnyKernel3 -b ARAGOTO ${KERN_DIR}/flasher
+        git clone --depth=1 https://github.com/saurabhchardereal/AnyKernel3 -b ARAGOTO "${KERN_DIR}"/flasher
 
     [[ ! -d "$PROTON_CLANG" ]] &&
-        git clone --depth=1 https://github.com/kdrag0n/proton-clang -b master $PROTON_CLANG
+        git clone --depth=1 https://github.com/kdrag0n/proton-clang -b master "${PROTON_CLANG}"
 }
 
 # Set make arguments based on which Clang we use
 makeArgs() {
     if [[ -n "$USE_AOSP_CLANG" ]]; then
         # specify clang version
-        CLANG_VER="r399163b"
-        MAKE_ARGS+=(CC=$AOSP_TC/clang/clang-${CLANG_VER}/bin/clang
+        # shellcheck disable=SC2191
+        MAKE_ARGS+=(CC="$AOSP_TC"/clang/clang-stable/bin/clang
             CLANG_TRIPLE=aarch64-linux-gnu-
             CROSS_COMPILE=aarch64-linux-android-
             CROSS_COMPILE_ARM32=arm-linux-androideabi-)
     else
         PATH=${PROTON_CLANG}/bin:$PATH
-        MAKE_ARGS+=(CC=${PROTON_CLANG}/bin/clang
+        # shellcheck disable=SC2191
+        MAKE_ARGS+=(CC="${PROTON_CLANG}"/bin/clang
             CROSS_COMPILE=aarch64-linux-gnu-
             CROSS_COMPILE_ARM32=arm-linux-gnueabi-)
     fi
@@ -81,7 +83,8 @@ makeDefconfig() {
 
 makeKernel() {
     header "Building kernel..."
-    checkTC; makeArgs
+    checkTC
+    makeArgs
     if [[ -f out/.config ]]; then
         make "${MAKE_ARGS[@]}" oldconfig
     else
@@ -92,16 +95,15 @@ makeKernel() {
     # Make flashable zip if not BUILD_ONLY
     if [[ -z ${BUILD_ONLY} ]]; then
         ZIMAGE=$(find out/arch/arm64 -name Image.gz-dtb)
-        if [[ -n ${ZIMAGE} ]]; then
+        { if [[ -n ${ZIMAGE} ]]; then
             header "Making Flashable Zip..."
             ZIP_NAME="ARAGOTO-$(date +"%d%m%Y")-$(date +%H:%M).zip"
-            cp -f ${ZIMAGE} ${KERN_DIR}/flasher
-            cd ${KERN_DIR}/flasher
-            find . -name "*.zip" -type f -delete
-            zip -r $ZIP_NAME *
+            cp -f "${ZIMAGE}" "${KERN_DIR}"/flasher
+            find "${KERN_DIR}"/flasher -name "*.zip" -type f -delete
+            zip -r "$ZIP_NAME" -- "${KERN_DIR}"/flasher/*
         else
             prErr "No kernel image found!"
-        fi
+        fi; }
     else
         prInfo "Kernel image build completed!"
     fi

@@ -23,8 +23,9 @@ function git_setup() { (
     if ! gpg_key_usable; then
         git clone https://github.com/saurabhchardereal/keys "${HOME}"/.keys
         gpg --import "${HOME}"/.keys/{private,public}-key.gpg
+        # shellcheck disable=SC2016
         [[ -n $BASH ]] && printf 'export GPG_TTY=$(tty)\n' >>"${HOME}"/.bashrc
-        rm -rf ${HOME}/.keys
+        rm -rf "${HOME}"/.keys
     fi
 
     if type -f gpg_key_usable &>/dev/null && gpg_key_usable; then

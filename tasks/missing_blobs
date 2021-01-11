@@ -44,5 +44,5 @@ BLOBS_PATH=(
     JAR_PATH=${ANDROID_PRODUCT_OUT}/tmp/MissingBlobs.jar
     trap 'rm -rf ${ANDROID_PRODUCT_OUT}/tmp;' EXIT
 }
-
+# shellcheck disable=SC2068
 java -jar "${JAR_PATH}" ${BLOBS_PATH[@]/#/$ANDROID_PRODUCT_OUT/} >"${PWD}"/missing_blobs.txt

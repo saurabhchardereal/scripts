@@ -13,6 +13,7 @@ else
     echo "No known shell was found!"
     exit 1
 fi
+export SCRIPT_DIR
 
 # Colors
 RST='\033[0m'
@@ -23,9 +24,9 @@ BLU='\033[1;34m'
 
 # Print formatted message with colors
 prInfo() { echo -e "${BLU}" "≡≡≡ $* ≡≡≡" "${RST}"; }
-prWarn() { echo -e "${YEL}" "■ $* ■"     "${RST}"; }
+prWarn() { echo -e "${YEL}" "■ $* ■" "${RST}"; }
 prSucc() { echo -e "${LGR}" "▓▒░ $* ░▒▓" "${RST}"; }
-prErr()  { echo -e "${RED}" "!!! $* !!!" "${RST}"; }
+prErr() { echo -e "${RED}" "!!! $* !!!" "${RST}"; }
 
 # Prints a formatted header to point out what is being done to the user
 header() {

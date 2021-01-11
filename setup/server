@@ -30,7 +30,7 @@ header "Setting up dotfiles and rest ..."
 git_setup
 
 # Setup configs
-ln -sf ${SCRIPT_DIR}/dotfiles/.vim ${HOME}
-ln -sf ${SCRIPT_DIR}/dotfiles/.zsh/.aliases ${HOME}/.bash_aliases
+ln -sf "${SCRIPT_DIR}"/dotfiles/.vim "${HOME}"
+ln -sf "${SCRIPT_DIR}"/dotfiles/.zsh/.aliases "${HOME}"/.bash_aliases
 
 prSucc "Server setup done!"
