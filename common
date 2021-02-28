@@ -26,7 +26,7 @@ BLU='\033[1;34m'
 prInfo() { echo -e "${BLU}" "≡≡≡ $* ≡≡≡" "${RST}"; }
 prWarn() { echo -e "${YEL}" "■ $* ■" "${RST}"; }
 prSucc() { echo -e "${LGR}" "▓▒░ $* ░▒▓" "${RST}"; }
-prErr() { echo -e "${RED}" "!!! $* !!!" "${RST}"; }
+prErr() { echo -e "${RED}" "!!! $* !!!" "${RST}" >&2; }
 
 # Prints a formatted header to point out what is being done to the user
 header() {

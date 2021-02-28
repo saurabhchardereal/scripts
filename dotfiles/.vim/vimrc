@@ -3,13 +3,13 @@
 " Copyright (C) 2020 Saurabh Charde <saurabhchardereal@gmail.com>
 "
 
+"==============================================================================
+" GENERAL SETTINGS
+"==============================================================================
+
 filetype plugin indent on   " Used for indentation based on file-type
 syntax enable               " Enable syntax highlighting
-set statusline+=\ %l\:%v    " Show line and column
-set wrap!                   " Do not wrap code by default
-
-" We do not use TAB = 8 spaces for most file types, so set TAB = 4 by default
-" Took from https://stackoverflow.com/questions/234564/tab-key-4-spaces-and-auto-indent-after-curly-braces-in-vim
+set nowrap                  " Do not wrap code by default
 set expandtab               " Expand TABs to spaces
 set shiftwidth=4            " Indents will have a width of 4
 set tabstop=4               " The width of a TAB is set to 4.
@@ -18,13 +18,16 @@ set tabstop=4               " The width of a TAB is set to 4.
                             " a width of 4.
 set softtabstop=4           " Sets the number of columns for a TAB
 set shell=bash              " Set default shell to bash coz zsh isn't POSIX-compatible
+set incsearch               " Incrementally highlights search patterns 
+set nobackup                " Disable backup
+set nowritebackup
 
-" highlight trailing whitespace in red
+" Highlight trailing whitespace in red
 hi ExtraWhitespace ctermbg=darkred
 match ExtraWhitespace /\s\+$/
 au BufWinEnter * match ExtraWhitespace /\s\+$/
 
-" highlight tabs in yellow
+" Highlight tabs in yellow
 hi Tabs ctermbg=yellow
 call matchadd('Tabs', '\t')
 au BufWinEnter * call matchadd('Tabs', '\t')
@@ -32,14 +35,36 @@ if version >= 702
   au BufWinLeave * call clearmatches()
 endif
 
-" Source plugins.vim to load plugins
+" Source plugins.vim to load vim plugins
 so ~/.vim/plugins.vim
 
-" Write {swap,viminfo,backup} to ~/.vim/{swap,viminfo,backup}
+" Write {swap,viminfo} to ~/.vim/{swap,viminfo}
 " https://vi.stackexchange.com/a/20067
 if !isdirectory('~/.vim/swap')
-    silent call system('mkdir -p ~/.vim/{swap,backup}')
-    set backupdir=~/.vim/backup//
+    silent call system('mkdir -p ~/.vim/swap')
     set directory=~/.vim/swap//
 endif
 set viminfo+=n~/.vim/viminfo
+
+"==============================================================================
+" FUNCTIONS
+"==============================================================================
+
+" Toggle indent style
+function! TglTabs()
+    if(&expandtab)
+        set noexpandtab
+        set tabstop=8
+        set softtabstop=8
+        set shiftwidth=8
+        highlight clear Tabs
+    else
+        set expandtab
+        set tabstop=4
+        set softtabstop=4
+        set shiftwidth=4
+    endif
+endfunc
+
+" Toggle spaces to tabs for C/C++ to match Linux kernel indent-style
+au FileType c,cpp call TglTabs()

@@ -26,9 +26,8 @@ function git_setup() { (
         # shellcheck disable=SC2016
         [[ -n $BASH ]] && printf 'export GPG_TTY=$(tty)\n' >>"${HOME}"/.bashrc
         rm -rf "${HOME}"/.keys
-    fi
 
-    if type -f gpg_key_usable &>/dev/null && gpg_key_usable; then
+        # cache gpg credential
         printf 'default-cache-ttl 604800\nmax-cache-ttl 2419200\n' >"${HOME}"/.gnupg/gpg-agent.conf
         git config --global commit.gpgsign true
         git config --global user.signkey 5B8A4DC9B94B1C64599A961F5CACE763EF81E4D1

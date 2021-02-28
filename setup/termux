@@ -30,7 +30,7 @@ setupTheme() {
 }
 
 # Settings I use for moi setup
-mkdir ~/.termux && touch ~/.termux/termux.properties
+[[ ! -d ~/.termux ]] && mkdir ~/.termux
 echo "extra-keys = [['ESC','/','-','HOME','UP','END','PGUP'],['TAB','CTRL','ALT','LEFT','DOWN','RIGHT','PGDN']]" >~/.termux/termux.properties
 setupTheme
 git_setup
