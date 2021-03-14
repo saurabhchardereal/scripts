@@ -10,7 +10,7 @@ source "$SCRIPT_PATH"/../common
 source "$SCRIPT_PATH"/git
 
 # Packages to install
-prInfo "Installing packages ..."
+pr_info "Installing packages ..."
 pkg install --no-install-recommends -y \
     antibody \
     nano \
@@ -22,9 +22,9 @@ pkg install --no-install-recommends -y \
     zsh
 
 # Theme
-setupTheme() {
+setup_theme() {
     # use Dracula color scheme & Hack font by default
-    prInfo "Setting up theme ..."
+    pr_info "Setting up theme ..."
     curl -Lso "$HOME"/.termux/colors.properties https://raw.githubusercontent.com/adi1090x/termux-style/master/colors/dracula.properties
     curl -Lso "$HOME"/.termux/font.ttf https://github.com/adi1090x/termux-style/raw/master/fonts/Hack.ttf
 }
@@ -32,7 +32,7 @@ setupTheme() {
 # Settings I use for moi setup
 [[ ! -d ~/.termux ]] && mkdir ~/.termux
 echo "extra-keys = [['ESC','/','-','HOME','UP','END','PGUP'],['TAB','CTRL','ALT','LEFT','DOWN','RIGHT','PGDN']]" >~/.termux/termux.properties
-setupTheme
+setup_theme
 git_setup
 
 # Setup dotfiles
@@ -43,4 +43,4 @@ ln -sf "$SCRIPT_DIR"/dotfiles/.vim "${HOME}"
 # Switch to zsh
 chsh -s zsh
 
-prSucc "Setup done!"
+pr_succ "Setup done!"

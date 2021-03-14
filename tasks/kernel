@@ -10,7 +10,7 @@ SCRIPT_PATH=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 source "${SCRIPT_PATH}"/../common
 
 # Exit if not a kernel repository
-[[ ! -f Makefile ]] && prErr "Run from within kernel directory!" && exit 1
+[[ ! -f Makefile ]] && pr_err "Run from within kernel directory!" && exit 1
 KERN_DIR=${PWD}
 
 # Set compiler paths
@@ -32,7 +32,7 @@ PATH=${AOSP_TC}/gcc/bin:${AOSP_TC}/gcc32/bin:$PATH
 MAKE_ARGS=(-j"$(nproc --all)" O=out ARCH=arm64)
 
 # Check for dependencies
-checkTC() {
+check_toolchains() {
     [[ ! -d "$AOSP_TC/clang" ]] &&
         git clone --depth=1 https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 -b master "${AOSP_TC}"/clang
 
@@ -50,7 +50,7 @@ checkTC() {
 }
 
 # Set make arguments based on which Clang we use
-makeArgs() {
+make_arguments() {
     if [[ -n "$USE_AOSP_CLANG" ]]; then
         # specify clang version
         # shellcheck disable=SC2191
@@ -67,24 +67,24 @@ makeArgs() {
     fi
 }
 
-makeClean() {
+make_clean() {
     header "Making Clean..."
     make "${MAKE_ARGS[@]}" clean
     make mrproper
-    prInfo "Cleaned!"
+    pr_info "Cleaned!"
 }
 
-makeDefconfig() {
+make_defconfig() {
     header "Regenerating defconfig..."
     make "${MAKE_ARGS[@]}" $DEFCONFIG
     cp -f out/.config arch/arm64/configs/$DEFCONFIG
-    prInfo "Renerating defconfig done!"
+    pr_info "Renerating defconfig done!"
 }
 
-makeKernel() {
+make_kernel() {
     header "Building kernel..."
-    checkTC
-    makeArgs
+    check_toolchains
+    make_arguments
     if [[ -f out/.config ]]; then
         make "${MAKE_ARGS[@]}" oldconfig
     else
@@ -102,10 +102,10 @@ makeKernel() {
             find "${KERN_DIR}"/flasher -name "*.zip" -type f -delete
             zip -r "$ZIP_NAME" -- "${KERN_DIR}"/flasher/*
         else
-            prErr "No kernel image found!"
+            pr_err "No kernel image found!"
         fi; }
     else
-        prInfo "Kernel image build completed!"
+        pr_info "Kernel image build completed!"
     fi
 }
 
@@ -123,15 +123,15 @@ parse_build_params() {
                 ;;
 
             -r | --regendef)
-                makeDefconfig
+                make_defconfig
                 ;;
 
             -c | --clean)
-                makeClean
+                make_clean
                 ;;
 
             -m | --make)
-                makeKernel
+                make_kernel
                 ;;
         esac
         shift
@@ -140,4 +140,4 @@ parse_build_params() {
 
 parse_build_params "${@}"
 DURATION=$(($(date +"%s") - START))
-prSucc "Build completed in $((DURATION / 60)) mins and $((DURATION % 60)) secs"
+pr_succ "Build completed in $((DURATION / 60)) mins and $((DURATION % 60)) secs"

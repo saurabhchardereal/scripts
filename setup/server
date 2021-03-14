@@ -22,7 +22,7 @@ sudo apt-get install -y megatools aria2c
 # `upgrade` to make sure we have everything running at latest
 sudo apt-get upgrade
 
-prInfo "Package install done!"
+pr_info "Package install done!"
 
 header "Setting up dotfiles and rest ..."
 
@@ -33,4 +33,4 @@ git_setup
 ln -sf "${SCRIPT_DIR}"/dotfiles/.vim "${HOME}"
 ln -sf "${SCRIPT_DIR}"/dotfiles/.zsh/.aliases "${HOME}"/.bash_aliases
 
-prSucc "Server setup done!"
+pr_succ "Server setup done!"

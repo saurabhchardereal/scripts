@@ -23,10 +23,10 @@ YEL='\033[1;33m'
 BLU='\033[1;34m'
 
 # Print formatted message with colors
-prInfo() { echo -e "${BLU}" "≡≡≡ $* ≡≡≡" "${RST}"; }
-prWarn() { echo -e "${YEL}" "■ $* ■" "${RST}"; }
-prSucc() { echo -e "${LGR}" "▓▒░ $* ░▒▓" "${RST}"; }
-prErr() { echo -e "${RED}" "!!! $* !!!" "${RST}" >&2; }
+pr_info() { echo -e "${BLU}" "≡≡≡ $* ≡≡≡" "${RST}"; }
+pr_warn() { echo -e "${YEL}" "■ $* ■" "${RST}"; }
+pr_succ() { echo -e "${LGR}" "▓▒░ $* ░▒▓" "${RST}"; }
+pr_err() { echo -e "${RED}" "!!! $* !!!" "${RST}" >&2; }
 
 # Prints a formatted header to point out what is being done to the user
 header() {
